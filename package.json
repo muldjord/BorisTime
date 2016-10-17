@@ -18,27 +18,33 @@
         "resources": {
             "media": [
                 {
-                    "file": "fonts/Roboto-Thin.ttf",
-                    "name": "FONT_20",
-                    "targetPlatforms": null,
-                    "type": "font"
-                },
-                {
                     "characterRegex": "[0-9:]",
-                    "file": "fonts/Roboto-Thin.ttf",
+                    "file": "fonts/Roboto-Light.ttf",
                     "name": "FONT_48",
                     "targetPlatforms": null,
                     "type": "font"
                 },
                 {
-                    "file": "data/walkup.png",
-                    "name": "WALKUP",
+                    "file": "fonts/Roboto-Light.ttf",
+                    "name": "FONT_20",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
+                    "file": "data/eating.png",
+                    "name": "EATING",
                     "targetPlatforms": null,
                     "type": "raw"
                 },
                 {
-                    "file": "data/walkdown.png",
-                    "name": "WALKDOWN",
+                    "file": "data/shredding.png",
+                    "name": "SHREDDING",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/walkup.png",
+                    "name": "WALKUP",
                     "targetPlatforms": null,
                     "type": "raw"
                 },
@@ -51,6 +57,12 @@
                 {
                     "file": "data/walkleft.png",
                     "name": "WALKLEFT",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/walkdown.png",
+                    "name": "WALKDOWN",
                     "targetPlatforms": null,
                     "type": "raw"
                 },

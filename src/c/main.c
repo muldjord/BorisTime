@@ -2,18 +2,13 @@
 
 static Window *s_main_window;
 static TextLayer *s_time_layer;
+static TextLayer *s_time_shadow_layer;
 static TextLayer *s_date_layer;
+static TextLayer *s_date_shadow_layer;
 static GFont s_time_font;
 static BitmapLayer *borisLayer;
-static GBitmap *borisBitmap;
-static GBitmapSequence *curBehav;
-static GBitmapSequence *bhStanding;
-static GBitmapSequence *bhSleeping;
-static GBitmapSequence *bhWalkLeft;
-static GBitmapSequence *bhWalkRight;
-static GBitmapSequence *bhWalkDown;
-static GBitmapSequence *bhWalkUp;
 static TextLayer *s_weather_layer;
+static TextLayer *s_weather_shadow_layer;
 static GFont s_weather_font;
 static char temperature_buffer[8];
 static char conditions_buffer[32];
@@ -26,8 +21,19 @@ static uint32_t state;
 static int borisX;
 static int borisY;
 static int borisSize;
+static GBitmap *borisBitmap;
+static GBitmapSequence *curBehav;
 
-#define NOOFBEHAVS 6
+static GBitmapSequence *bhStanding;
+static GBitmapSequence *bhSleeping;
+static GBitmapSequence *bhWalkLeft;
+static GBitmapSequence *bhWalkRight;
+static GBitmapSequence *bhWalkDown;
+static GBitmapSequence *bhWalkUp;
+static GBitmapSequence *bhShredding;
+static GBitmapSequence *bhEating;
+
+#define NOOFBEHAVS 8
 
 #define STANDING 0
 #define SLEEPING 1
@@ -35,6 +41,8 @@ static int borisSize;
 #define WALKRIGHT 3
 #define WALKUP 4
 #define WALKDOWN 5
+#define SHREDDING 6
+#define EATING 7
 
 static void loadBehavs() {
   bhStanding = gbitmap_sequence_create_with_resource(RESOURCE_ID_STANDING);
@@ -43,6 +51,8 @@ static void loadBehavs() {
   bhWalkRight = gbitmap_sequence_create_with_resource(RESOURCE_ID_WALKRIGHT);
   bhWalkDown = gbitmap_sequence_create_with_resource(RESOURCE_ID_WALKDOWN);
   bhWalkUp = gbitmap_sequence_create_with_resource(RESOURCE_ID_WALKUP);
+  bhShredding = gbitmap_sequence_create_with_resource(RESOURCE_ID_SHREDDING);
+  bhEating = gbitmap_sequence_create_with_resource(RESOURCE_ID_EATING);
 }
 
 static void nextFrame() {
@@ -120,6 +130,12 @@ static void changeBehaviour() {
     case WALKUP:
       curBehav = bhWalkUp;
     break;
+    case SHREDDING:
+      curBehav = bhShredding;
+    break;
+    case EATING:
+      curBehav = bhEating;
+    break;
   }
   // Make sure we start the animation from the beginning
   gbitmap_sequence_restart(curBehav);
@@ -144,6 +160,8 @@ static void update_time() {
   // Display this time on the TextLayer
   text_layer_set_text(s_time_layer, time_buffer);
   text_layer_set_text(s_date_layer, date_buffer);
+  text_layer_set_text(s_time_shadow_layer, time_buffer);
+  text_layer_set_text(s_date_shadow_layer, date_buffer);
 }
 
 static void battery_update_proc(Layer *layer, GContext *ctx) {
@@ -197,6 +215,8 @@ static void main_window_load(Window *window) {
 
   s_time_layer = text_layer_create(GRect(0, 10, bounds.size.w, 50));
   s_date_layer = text_layer_create(GRect(0, 75, bounds.size.w, 50));
+  s_time_shadow_layer = text_layer_create(GRect(0, 14, bounds.size.w, 50));
+  s_date_shadow_layer = text_layer_create(GRect(0, 79, bounds.size.w, 50));
 
   // Improve the layout to be more like a watchface
   text_layer_set_background_color(s_time_layer, GColorClear);
@@ -208,14 +228,23 @@ static void main_window_load(Window *window) {
   text_layer_set_text_color(s_date_layer, GColorWhite);
   text_layer_set_font(s_date_layer, s_weather_font);
   text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
-  
-  // Add it as a child layer to the Window's root layer
-  layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
-  layer_add_child(window_layer, text_layer_get_layer(s_date_layer));
+
+  // Repeat for shadow layers
+  text_layer_set_background_color(s_time_shadow_layer, GColorClear);
+  text_layer_set_text_color(s_time_shadow_layer, GColorBlack);
+  text_layer_set_font(s_time_shadow_layer, s_time_font);
+  text_layer_set_text_alignment(s_time_shadow_layer, GTextAlignmentCenter);
+
+  text_layer_set_background_color(s_date_shadow_layer, GColorClear);
+  text_layer_set_text_color(s_date_shadow_layer, GColorBlack);
+  text_layer_set_font(s_date_shadow_layer, s_weather_font);
+  text_layer_set_text_alignment(s_date_shadow_layer, GTextAlignmentCenter);
   
   // Create temperature Layer
   s_weather_layer = text_layer_create(
   GRect(0, PBL_IF_ROUND_ELSE(125, 120), bounds.size.w, 25));
+  s_weather_shadow_layer = text_layer_create(
+  GRect(0, PBL_IF_ROUND_ELSE(129, 124), bounds.size.w, 25));
 
   // Style the text
   text_layer_set_background_color(s_weather_layer, GColorClear);
@@ -223,31 +252,45 @@ static void main_window_load(Window *window) {
   text_layer_set_text_alignment(s_weather_layer, GTextAlignmentCenter);
   text_layer_set_text(s_weather_layer, "Loading...");
 
+  // Style the shadow
+  text_layer_set_background_color(s_weather_shadow_layer, GColorClear);
+  text_layer_set_text_color(s_weather_shadow_layer, GColorBlack);
+  text_layer_set_text_alignment(s_weather_shadow_layer, GTextAlignmentCenter);
+  text_layer_set_text(s_weather_shadow_layer, "Loading...");
+
   // Create second custom font, apply it and add to Window
   text_layer_set_font(s_weather_layer, s_weather_font);
-  layer_add_child(window_get_root_layer(window), text_layer_get_layer(s_weather_layer));
+  text_layer_set_font(s_weather_shadow_layer, s_weather_font);
   
   // Create battery meter Layer
   s_battery_layer = layer_create(GRect(0, 150, 144, 2));
   layer_set_update_proc(s_battery_layer, battery_update_proc);
+
+  // Add shadow layers
+  layer_add_child(window_layer, text_layer_get_layer(s_time_shadow_layer));
+  layer_add_child(window_layer, text_layer_get_layer(s_date_shadow_layer));
+  layer_add_child(window_layer, text_layer_get_layer(s_weather_shadow_layer));
+  
+  // Add front font layers
+  layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
+  layer_add_child(window_layer, text_layer_get_layer(s_date_layer));
+  layer_add_child(window_layer, text_layer_get_layer(s_weather_layer));
 
   // Add to Window
   layer_add_child(window_get_root_layer(window), s_battery_layer);
 }
 
 static void main_window_unload(Window *window) {
-  // Destroy TextLayer
   text_layer_destroy(s_time_layer);
-  // Unload GFont
-  fonts_unload_custom_font(s_time_font);
-  // Destroy GBitmap
-  gbitmap_destroy(borisBitmap);
-  // Destroy BitmapLayer
-  bitmap_layer_destroy(borisLayer);
-  // Destroy weather elements
+  text_layer_destroy(s_time_shadow_layer);
+  text_layer_destroy(s_date_layer);
+  text_layer_destroy(s_date_shadow_layer);
   text_layer_destroy(s_weather_layer);
+  text_layer_destroy(s_weather_shadow_layer);
+  gbitmap_destroy(borisBitmap);
+  bitmap_layer_destroy(borisLayer);
   fonts_unload_custom_font(s_weather_font);
-  // Destroy battery elements
+  fonts_unload_custom_font(s_time_font);
   layer_destroy(s_battery_layer);
 }
 
@@ -263,6 +306,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     // Assemble full string and display
     snprintf(weather_layer_buffer, sizeof(weather_layer_buffer), "%s, %s", temperature_buffer, conditions_buffer);
     text_layer_set_text(s_weather_layer, weather_layer_buffer);
+    text_layer_set_text(s_weather_shadow_layer, weather_layer_buffer);
   }
 }
 
@@ -304,7 +348,7 @@ static void init() {
   // Register with TickTimerService
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
   
-  window_set_background_color(s_main_window, GColorBlack);
+  window_set_background_color(s_main_window, GColorDarkGreen);
 
   // Register callbacks
   app_message_register_inbox_received(inbox_received_callback);
