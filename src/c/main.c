@@ -348,7 +348,7 @@ static void init() {
   // Register with TickTimerService
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
   
-  window_set_background_color(s_main_window, GColorDarkGreen);
+  window_set_background_color(s_main_window, GColorBlack);
 
   // Register callbacks
   app_message_register_inbox_received(inbox_received_callback);
