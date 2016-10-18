@@ -1,6 +1,8 @@
 {
     "author": "Lars Muldjord",
-    "dependencies": {},
+    "dependencies": {
+        "pebble-clay": "^1.0.2"
+    },
     "keywords": [],
     "name": "boristime",
     "pebble": {
@@ -12,11 +14,129 @@
         "enableMultiJS": true,
         "messageKeys": [
             "TEMPERATURE",
-            "CONDITIONS"
+            "ICON",
+            "WeatherCity",
+            "WeatherKey",
+            "BackgroundColor"
         ],
         "projectType": "native",
         "resources": {
             "media": [
+                {
+                    "file": "images/50n.png",
+                    "name": "50N",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/50d.png",
+                    "name": "50D",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/13n.png",
+                    "name": "13N",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/13d.png",
+                    "name": "13D",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/11n.png",
+                    "name": "11N",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/11d.png",
+                    "name": "11D",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/10n.png",
+                    "name": "10N",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/10d.png",
+                    "name": "10D",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/09n.png",
+                    "name": "09N",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/09d.png",
+                    "name": "09D",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/04n.png",
+                    "name": "04N",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/04d.png",
+                    "name": "04D",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/03n.png",
+                    "name": "03N",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/03d.png",
+                    "name": "03D",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/02n.png",
+                    "name": "02N",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/02d.png",
+                    "name": "02D",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/01n.png",
+                    "name": "01N",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/01d.png",
+                    "name": "01D",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/icon.png",
+                    "menuIcon": true,
+                    "name": "ICON",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
                 {
                     "characterRegex": "[0-9:]",
                     "file": "fonts/Roboto-Light.ttf",
@@ -77,13 +197,6 @@
                     "name": "STANDING",
                     "targetPlatforms": null,
                     "type": "raw"
-                },
-                {
-                    "file": "images/icon.png",
-                    "menuIcon": true,
-                    "name": "ICON",
-                    "targetPlatforms": null,
-                    "type": "bitmap"
                 }
             ]
         },

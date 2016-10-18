@@ -7,22 +7,39 @@ static TextLayer *s_date_layer;
 static TextLayer *s_date_shadow_layer;
 static GFont s_time_font;
 static BitmapLayer *borisLayer;
+static BitmapLayer *weatherLayer;
 static TextLayer *s_weather_layer;
 static TextLayer *s_weather_shadow_layer;
 static GFont s_weather_font;
 static char temperature_buffer[8];
-static char conditions_buffer[32];
+static char icon_buffer[4];
 static char weather_layer_buffer[32];
 static int s_battery_level;
 static Layer *s_battery_layer;
 static AppTimer *frameTimer;
 static AppTimer *behavTimer;
-static uint32_t state;
-static int borisX;
-static int borisY;
-static int borisSize;
 static GBitmap *borisBitmap;
+static GBitmap *weatherBitmap;
 static GBitmapSequence *curBehav;
+
+static GBitmap *wIcon01d;
+static GBitmap *wIcon01n;
+static GBitmap *wIcon02d;
+static GBitmap *wIcon02n;
+static GBitmap *wIcon03d;
+static GBitmap *wIcon03n;
+static GBitmap *wIcon04d;
+static GBitmap *wIcon04n;
+static GBitmap *wIcon09d;
+static GBitmap *wIcon09n;
+static GBitmap *wIcon10d;
+static GBitmap *wIcon10n;
+static GBitmap *wIcon11d;
+static GBitmap *wIcon11n;
+static GBitmap *wIcon13d;
+static GBitmap *wIcon13n;
+static GBitmap *wIcon50d;
+static GBitmap *wIcon50n;
 
 static GBitmapSequence *bhStanding;
 static GBitmapSequence *bhSleeping;
@@ -44,6 +61,41 @@ static GBitmapSequence *bhEating;
 #define SHREDDING 6
 #define EATING 7
 
+// Persistent storage key
+#define SETTINGS_KEY 1
+
+// Define our settings struct
+typedef struct AppSettings {
+  GColor bgColor;
+  uint32_t state;
+  int borisX;
+  int borisY;
+  int borisSize;
+} AppSettings;
+
+static AppSettings settings;
+
+static void default_settings() {
+  settings.bgColor = GColorBlack;
+  settings.state = STANDING;
+  settings.borisX = 10;
+  settings.borisY = 72;
+  settings.borisSize = 32;
+}
+
+// Read settings from persistent storage
+static void load_settings() {
+  // Load the default settings
+  default_settings();
+  // Read settings from persistent storage, if they exist
+  persist_read_data(SETTINGS_KEY, &settings, sizeof(settings));
+}
+
+// Save the settings to persistent storage
+static void save_settings() {
+  persist_write_data(SETTINGS_KEY, &settings, sizeof(settings));
+}
+
 static void loadBehavs() {
   bhStanding = gbitmap_sequence_create_with_resource(RESOURCE_ID_STANDING);
   bhSleeping = gbitmap_sequence_create_with_resource(RESOURCE_ID_SLEEPING);
@@ -53,6 +105,27 @@ static void loadBehavs() {
   bhWalkUp = gbitmap_sequence_create_with_resource(RESOURCE_ID_WALKUP);
   bhShredding = gbitmap_sequence_create_with_resource(RESOURCE_ID_SHREDDING);
   bhEating = gbitmap_sequence_create_with_resource(RESOURCE_ID_EATING);
+}
+
+static void loadWeatherIcons() {
+  wIcon01d = gbitmap_create_with_resource(RESOURCE_ID_01D);
+  wIcon01n = gbitmap_create_with_resource(RESOURCE_ID_01N);
+  wIcon02d = gbitmap_create_with_resource(RESOURCE_ID_02D);
+  wIcon02n = gbitmap_create_with_resource(RESOURCE_ID_02N);
+  wIcon03d = gbitmap_create_with_resource(RESOURCE_ID_03D);
+  wIcon03n = gbitmap_create_with_resource(RESOURCE_ID_03N);
+  wIcon04d = gbitmap_create_with_resource(RESOURCE_ID_04D);
+  wIcon04n = gbitmap_create_with_resource(RESOURCE_ID_04N);
+  wIcon09d = gbitmap_create_with_resource(RESOURCE_ID_09D);
+  wIcon09n = gbitmap_create_with_resource(RESOURCE_ID_09N);
+  wIcon10d = gbitmap_create_with_resource(RESOURCE_ID_10D);
+  wIcon10n = gbitmap_create_with_resource(RESOURCE_ID_10N);
+  wIcon11d = gbitmap_create_with_resource(RESOURCE_ID_11D);
+  wIcon11n = gbitmap_create_with_resource(RESOURCE_ID_11N);
+  wIcon13d = gbitmap_create_with_resource(RESOURCE_ID_13D);
+  wIcon13n = gbitmap_create_with_resource(RESOURCE_ID_13N);
+  wIcon50d = gbitmap_create_with_resource(RESOURCE_ID_50D);
+  wIcon50n = gbitmap_create_with_resource(RESOURCE_ID_50N);
 }
 
 static void nextFrame() {
@@ -65,37 +138,41 @@ static void nextFrame() {
   }
 
   // Move Boris if current animation is a walking animation
-  if(state == WALKLEFT) {
-    borisX = borisX - 2;
-    layer_set_frame(bitmap_layer_get_layer(borisLayer), GRect(borisX, borisY, borisSize, borisSize));
-  } else if(state == WALKRIGHT) {
-    borisX = borisX + 2;
-    layer_set_frame(bitmap_layer_get_layer(borisLayer), GRect(borisX, borisY, borisSize, borisSize));
-  } else if(state == WALKDOWN) {
-    borisY = borisY + 1;
-    layer_set_frame(bitmap_layer_get_layer(borisLayer), GRect(borisX, borisY, borisSize, borisSize));
-  } else if(state == WALKUP) {
-    borisY = borisY - 1;
-    layer_set_frame(bitmap_layer_get_layer(borisLayer), GRect(borisX, borisY, borisSize, borisSize));
+  if(settings.state == WALKLEFT) {
+    settings.borisX = settings.borisX - 2;
+    layer_set_frame(bitmap_layer_get_layer(borisLayer), GRect(settings.borisX, settings.borisY,
+                                                              settings.borisSize, settings.borisSize));
+  } else if(settings.state == WALKRIGHT) {
+    settings.borisX = settings.borisX + 2;
+    layer_set_frame(bitmap_layer_get_layer(borisLayer), GRect(settings.borisX, settings.borisY,
+                                                              settings.borisSize, settings.borisSize));
+  } else if(settings.state == WALKDOWN) {
+    settings.borisY = settings.borisY + 1;
+    layer_set_frame(bitmap_layer_get_layer(borisLayer), GRect(settings.borisX, settings.borisY,
+                                                              settings.borisSize, settings.borisSize));
+  } else if(settings.state == WALKUP) {
+    settings.borisY = settings.borisY - 1;
+    layer_set_frame(bitmap_layer_get_layer(borisLayer), GRect(settings.borisX, settings.borisY,
+                                                              settings.borisSize, settings.borisSize));
   }
   
   // Pebble Time resolution is 144 x 168
   // Make sure Boris doesn't get too far out of bounds
-  int min = -borisSize;
+  int min = -settings.borisSize;
   int maxX = 168;
   int maxY = 144;
-  if(borisX < -min || borisX > maxX || borisY < -min || borisY > maxY) {
-    if(borisX < -min) {
-      borisX = -min;
+  if(settings.borisX < -min || settings.borisX > maxX || settings.borisY < -min || settings.borisY > maxY) {
+    if(settings.borisX < -min) {
+      settings.borisX = -min;
     }
-    if(borisX > maxX) {
-      borisX = maxX;
+    if(settings.borisX > maxX) {
+      settings.borisX = maxX;
     }
-    if(borisY < -min) {
-      borisY = -min;
+    if(settings.borisY < -min) {
+      settings.borisY = -min;
     }
-    if(borisY > maxY) {
-      borisY = maxY;
+    if(settings.borisY > maxY) {
+      settings.borisY = maxY;
     }
     app_timer_reschedule(behavTimer, 0);
     return;
@@ -110,8 +187,8 @@ static void changeBehaviour() {
   app_timer_cancel(frameTimer);
   
   // Choose a random behaviour unless one is specified
-  state = rand() % NOOFBEHAVS;
-  switch(state) {
+  settings.state = rand() % NOOFBEHAVS;
+  switch(settings.state) {
     case STANDING:
       curBehav = bhStanding;
     break;
@@ -154,9 +231,9 @@ static void update_time() {
 
   // Write the current hours and minutes into a buffer
   static char time_buffer[8];
-  static char date_buffer[8];
+  static char date_buffer[16];
   strftime(time_buffer, sizeof(time_buffer), (clock_is_24h_style() ? "%H:%M" : "%I:%M"), tick_time);
-  strftime(date_buffer, sizeof(date_buffer), "%d/%m", tick_time);
+  strftime(date_buffer, sizeof(date_buffer), "%d %B", tick_time);
   // Display this time on the TextLayer
   text_layer_set_text(s_time_layer, time_buffer);
   text_layer_set_text(s_date_layer, date_buffer);
@@ -198,64 +275,79 @@ static void main_window_load(Window *window) {
   // Load all behaviours
   loadBehavs();
 
+  // load all weather icons
+  loadWeatherIcons();
+  
   // Create blank GBitmap using APNG frame size
   GSize frame_size = gbitmap_sequence_get_bitmap_size(bhStanding);
   borisBitmap = gbitmap_create_blank(frame_size, GBitmapFormat8Bit);
 
   // Create BitmapLayer to display the GBitmap
-  borisLayer = bitmap_layer_create(GRect(borisX, borisY, borisSize, borisSize));
+  borisLayer = bitmap_layer_create(GRect(settings.borisX, settings.borisY, settings.borisSize, settings.borisSize));
 
   // Set the bitmap onto the layer and add to the window
+  bitmap_layer_set_compositing_mode(borisLayer, GCompOpSet);
   bitmap_layer_set_bitmap(borisLayer, borisBitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(borisLayer));
+
+  // Create blank GBitmap using APNG frame size
+  weatherBitmap = gbitmap_create_with_resource(RESOURCE_ID_50D);
+
+  // Create BitmapLayer to display the GBitmap
+  weatherLayer = bitmap_layer_create(GRect(13, 85, 32, 32));
+
+  // Set the bitmap onto the layer and add to the window
+  bitmap_layer_set_compositing_mode(weatherLayer, GCompOpSet);
+  bitmap_layer_set_bitmap(weatherLayer, weatherBitmap);
+  layer_add_child(window_layer, bitmap_layer_get_layer(weatherLayer));
 
   // Create GFont
   s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_48));
   s_weather_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_20));
 
-  s_time_layer = text_layer_create(GRect(0, 10, bounds.size.w, 50));
-  s_date_layer = text_layer_create(GRect(0, 75, bounds.size.w, 50));
-  s_time_shadow_layer = text_layer_create(GRect(0, 14, bounds.size.w, 50));
-  s_date_shadow_layer = text_layer_create(GRect(0, 79, bounds.size.w, 50));
+  s_time_layer = text_layer_create(GRect(13, 10, bounds.size.w, 50));
+  s_date_layer = text_layer_create(GRect(13, 60, bounds.size.w, 50));
+  s_time_shadow_layer = text_layer_create(GRect(13, 14, bounds.size.w, 50));
+  s_date_shadow_layer = text_layer_create(GRect(13, 64, bounds.size.w, 50));
 
   // Improve the layout to be more like a watchface
   text_layer_set_background_color(s_time_layer, GColorClear);
   text_layer_set_text_color(s_time_layer, GColorWhite);
   text_layer_set_font(s_time_layer, s_time_font);
-  text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
+  text_layer_set_text_alignment(s_time_layer, GTextAlignmentLeft);
 
   text_layer_set_background_color(s_date_layer, GColorClear);
   text_layer_set_text_color(s_date_layer, GColorWhite);
   text_layer_set_font(s_date_layer, s_weather_font);
-  text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
+  text_layer_set_text_alignment(s_date_layer, GTextAlignmentLeft);
 
   // Repeat for shadow layers
   text_layer_set_background_color(s_time_shadow_layer, GColorClear);
   text_layer_set_text_color(s_time_shadow_layer, GColorBlack);
   text_layer_set_font(s_time_shadow_layer, s_time_font);
-  text_layer_set_text_alignment(s_time_shadow_layer, GTextAlignmentCenter);
+  text_layer_set_text_alignment(s_time_shadow_layer, GTextAlignmentLeft);
 
   text_layer_set_background_color(s_date_shadow_layer, GColorClear);
   text_layer_set_text_color(s_date_shadow_layer, GColorBlack);
   text_layer_set_font(s_date_shadow_layer, s_weather_font);
-  text_layer_set_text_alignment(s_date_shadow_layer, GTextAlignmentCenter);
+  text_layer_set_text_alignment(s_date_shadow_layer, GTextAlignmentLeft);
   
   // Create temperature Layer
   s_weather_layer = text_layer_create(
-  GRect(0, PBL_IF_ROUND_ELSE(125, 120), bounds.size.w, 25));
+  GRect(13, 115, bounds.size.w, 25));
   s_weather_shadow_layer = text_layer_create(
-  GRect(0, PBL_IF_ROUND_ELSE(129, 124), bounds.size.w, 25));
+  GRect(13, 119, bounds.size.w, 25));
 
   // Style the text
   text_layer_set_background_color(s_weather_layer, GColorClear);
   text_layer_set_text_color(s_weather_layer, GColorWhite);
-  text_layer_set_text_alignment(s_weather_layer, GTextAlignmentCenter);
+  text_layer_set_text_alignment(s_weather_layer, GTextAlignmentLeft);
   text_layer_set_text(s_weather_layer, "Loading...");
 
   // Style the shadow
   text_layer_set_background_color(s_weather_shadow_layer, GColorClear);
   text_layer_set_text_color(s_weather_shadow_layer, GColorBlack);
-  text_layer_set_text_alignment(s_weather_shadow_layer, GTextAlignmentCenter);
+  text_layer_set_text_alignment(s_weather_shadow_layer, GTextAlignmentLeft);
   text_layer_set_text(s_weather_shadow_layer, "Loading...");
 
   // Create second custom font, apply it and add to Window
@@ -289,6 +381,8 @@ static void main_window_unload(Window *window) {
   text_layer_destroy(s_weather_shadow_layer);
   gbitmap_destroy(borisBitmap);
   bitmap_layer_destroy(borisLayer);
+  gbitmap_destroy(weatherBitmap);
+  bitmap_layer_destroy(weatherLayer);
   fonts_unload_custom_font(s_weather_font);
   fonts_unload_custom_font(s_time_font);
   layer_destroy(s_battery_layer);
@@ -297,16 +391,60 @@ static void main_window_unload(Window *window) {
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
   // Read tuples for data
   Tuple *temp_tuple = dict_find(iterator, MESSAGE_KEY_TEMPERATURE);
-  Tuple *conditions_tuple = dict_find(iterator, MESSAGE_KEY_CONDITIONS);
+  Tuple *icon_tuple = dict_find(iterator, MESSAGE_KEY_ICON);
+  Tuple *bg_color_tuple = dict_find(iterator, MESSAGE_KEY_BackgroundColor);
 
   // If all data is available, use it
-  if(temp_tuple && conditions_tuple) {
+  if(temp_tuple && icon_tuple) {
     snprintf(temperature_buffer, sizeof(temperature_buffer), "%dC", (int)temp_tuple->value->int32);
-    snprintf(conditions_buffer, sizeof(conditions_buffer), "%s", conditions_tuple->value->cstring);
+    snprintf(icon_buffer, sizeof(icon_buffer), "%s", icon_tuple->value->cstring);
     // Assemble full string and display
-    snprintf(weather_layer_buffer, sizeof(weather_layer_buffer), "%s, %s", temperature_buffer, conditions_buffer);
+    snprintf(weather_layer_buffer, sizeof(weather_layer_buffer), "%s", temperature_buffer);
     text_layer_set_text(s_weather_layer, weather_layer_buffer);
     text_layer_set_text(s_weather_shadow_layer, weather_layer_buffer);
+    if(!strncmp(icon_buffer, "01d", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon01d);
+    } else if(!strncmp(icon_buffer, "01n", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon01n);
+    } else if(!strncmp(icon_buffer, "02d", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon02d);
+    } else if(!strncmp(icon_buffer, "02n", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon02n);
+    } else if(!strncmp(icon_buffer, "03d", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon03d);
+    } else if(!strncmp(icon_buffer, "03n", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon03n);
+    } else if(!strncmp(icon_buffer, "04d", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon04d);
+    } else if(!strncmp(icon_buffer, "04n", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon04n);
+    } else if(!strncmp(icon_buffer, "09d", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon09d);
+    } else if(!strncmp(icon_buffer, "09n", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon09n);
+    } else if(!strncmp(icon_buffer, "10d", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon10d);
+    } else if(!strncmp(icon_buffer, "10n", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon10n);
+    } else if(!strncmp(icon_buffer, "11d", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon11d);
+    } else if(!strncmp(icon_buffer, "11n", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon11n);
+    } else if(!strncmp(icon_buffer, "13d", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon13d);
+    } else if(!strncmp(icon_buffer, "13n", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon13n);
+    } else if(!strncmp(icon_buffer, "50d", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon50d);
+    } else if(!strncmp(icon_buffer, "50n", 3)) {
+      bitmap_layer_set_bitmap(weatherLayer, wIcon50n);
+    }
+    layer_mark_dirty(bitmap_layer_get_layer(weatherLayer));
+  }
+  if(bg_color_tuple) {
+    settings.bgColor = GColorFromHEX(bg_color_tuple->value->int32);
+    window_set_background_color(s_main_window, settings.bgColor);
+    save_settings();
   }
 }
 
@@ -330,10 +468,7 @@ static void battery_callback(BatteryChargeState state) {
 }
 
 static void init() {
-  state = STANDING;
-  borisX = 10;
-  borisY = 72;
-  borisSize = 32;
+  load_settings();
   
   s_main_window = window_create();
   window_set_window_handlers(s_main_window, (WindowHandlers) {
@@ -348,7 +483,7 @@ static void init() {
   // Register with TickTimerService
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
   
-  window_set_background_color(s_main_window, GColorBlack);
+  window_set_background_color(s_main_window, settings.bgColor);
 
   // Register callbacks
   app_message_register_inbox_received(inbox_received_callback);
@@ -371,6 +506,7 @@ static void init() {
 
 static void deinit() {
   window_destroy(s_main_window);
+  save_settings();
 }
 
 int main(void) {

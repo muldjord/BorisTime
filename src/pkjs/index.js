@@ -1,3 +1,15 @@
+// Import the Clay package
+var Clay = require('pebble-clay');
+// Load our Clay configuration file
+var clayConfig = require('./config');
+// Initialize Clay
+var clay = new Clay(clayConfig);
+
+var settings = {};
+try {
+  settings = JSON.parse(localStorage.getItem('clay-settings')) || {};
+} catch (e) {}
+
 // Listen for when the watchface is opened
 Pebble.addEventListener('ready', 
   function(e) {
@@ -26,7 +38,7 @@ var xhrRequest = function (url, type, callback) {
 
 function getWeather() {
   // Construct URL
-  var url = 'http://api.openweathermap.org/data/2.5/weather?q=Aarhus&appid=fe9fe6cf47c03d2640d5063fbfa053a2';
+  var url = 'http://api.openweathermap.org/data/2.5/weather?q=' + settings.WeatherCity + '&appid=' + settings.WeatherKey;
 
   // Send request to OpenWeatherMap
   xhrRequest(url, 'GET', 
@@ -39,12 +51,12 @@ function getWeather() {
       console.log('Temperature is ' + temperature);
 
       // Conditions
-      var conditions = json.weather[0].main;      
-      console.log('Conditions are ' + conditions);
+      var icon = json.weather[0].icon;      
+      console.log('Weather icon is ' + icon);
       // Assemble dictionary using our keys
       var dictionary = {
         'TEMPERATURE': temperature,
-        'CONDITIONS': conditions
+        'ICON': icon
       };
 
       // Send to Pebble
