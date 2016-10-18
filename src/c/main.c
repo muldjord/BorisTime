@@ -50,6 +50,9 @@ static GBitmapSequence *bhWalkUp;
 static GBitmapSequence *bhShredding;
 static GBitmapSequence *bhEating;
 
+static void nextFrame();
+static void changeBehaviour(int newState);
+
 #define NOOFBEHAVS 8
 
 #define STANDING 0
@@ -107,25 +110,56 @@ static void loadBehavs() {
   bhEating = gbitmap_sequence_create_with_resource(RESOURCE_ID_EATING);
 }
 
-static void loadWeatherIcons() {
-  wIcon01d = gbitmap_create_with_resource(RESOURCE_ID_01D);
-  wIcon01n = gbitmap_create_with_resource(RESOURCE_ID_01N);
-  wIcon02d = gbitmap_create_with_resource(RESOURCE_ID_02D);
-  wIcon02n = gbitmap_create_with_resource(RESOURCE_ID_02N);
-  wIcon03d = gbitmap_create_with_resource(RESOURCE_ID_03D);
-  wIcon03n = gbitmap_create_with_resource(RESOURCE_ID_03N);
-  wIcon04d = gbitmap_create_with_resource(RESOURCE_ID_04D);
-  wIcon04n = gbitmap_create_with_resource(RESOURCE_ID_04N);
-  wIcon09d = gbitmap_create_with_resource(RESOURCE_ID_09D);
-  wIcon09n = gbitmap_create_with_resource(RESOURCE_ID_09N);
-  wIcon10d = gbitmap_create_with_resource(RESOURCE_ID_10D);
-  wIcon10n = gbitmap_create_with_resource(RESOURCE_ID_10N);
-  wIcon11d = gbitmap_create_with_resource(RESOURCE_ID_11D);
-  wIcon11n = gbitmap_create_with_resource(RESOURCE_ID_11N);
-  wIcon13d = gbitmap_create_with_resource(RESOURCE_ID_13D);
-  wIcon13n = gbitmap_create_with_resource(RESOURCE_ID_13N);
-  wIcon50d = gbitmap_create_with_resource(RESOURCE_ID_50D);
-  wIcon50n = gbitmap_create_with_resource(RESOURCE_ID_50N);
+static void pickRandomBehav() {
+  changeBehaviour(666);
+}
+
+static void changeBehaviour(int newState) {
+  // Stop the current frame timer
+  app_timer_cancel(frameTimer);
+  app_timer_cancel(behavTimer);
+  
+  // Choose a random behaviour unless one is specified
+  if(newState != 666) {
+    settings.state = newState;
+  } else {
+    settings.state = rand() % NOOFBEHAVS;
+  }
+  //settings.state = WALKLEFT; // Uncomment to test / force behaviour
+  switch(settings.state) {
+    case STANDING:
+      curBehav = bhStanding;
+    break;
+    case SLEEPING:
+      curBehav = bhSleeping;
+    break;
+    case WALKLEFT:
+      curBehav = bhWalkLeft;
+    break;
+    case WALKRIGHT:
+      curBehav = bhWalkRight;
+    break;
+    case WALKDOWN:
+      curBehav = bhWalkDown;
+    break;
+    case WALKUP:
+      curBehav = bhWalkUp;
+    break;
+    case SHREDDING:
+      curBehav = bhShredding;
+    break;
+    case EATING:
+      curBehav = bhEating;
+    break;
+  }
+  // Make sure we start the animation from the beginning
+  gbitmap_sequence_restart(curBehav);
+  
+  // Set timeout for next behaviour change
+  behavTimer = app_timer_register((rand() % 3000) + 3000, pickRandomBehav, NULL);
+
+  // Start the animation again
+  nextFrame();
 }
 
 static void nextFrame() {
@@ -158,23 +192,23 @@ static void nextFrame() {
   
   // Pebble Time resolution is 144 x 168
   // Make sure Boris doesn't get too far out of bounds
-  int min = -settings.borisSize;
-  int maxX = 168;
-  int maxY = 144;
-  if(settings.borisX < -min || settings.borisX > maxX || settings.borisY < -min || settings.borisY > maxY) {
+  int min = settings.borisSize;
+  int maxX = 144;
+  int maxY = 168;
+  if(settings.borisX < -min || settings.borisX > maxX ||
+     settings.borisY < -min || settings.borisY > maxY) {
     if(settings.borisX < -min) {
-      settings.borisX = -min;
-    }
-    if(settings.borisX > maxX) {
       settings.borisX = maxX;
     }
-    if(settings.borisY < -min) {
-      settings.borisY = -min;
+    if(settings.borisX > maxX) {
+      settings.borisX = -min;
     }
-    if(settings.borisY > maxY) {
+    if(settings.borisY < -min) {
       settings.borisY = maxY;
     }
-    app_timer_reschedule(behavTimer, 0);
+    if(settings.borisY > maxY) {
+      settings.borisY = -min;
+    }
     return;
   }
 
@@ -182,46 +216,25 @@ static void nextFrame() {
   frameTimer = app_timer_register(nextDelay, nextFrame, NULL);
 }
 
-static void changeBehaviour() {
-  // Stop the current frame timer
-  app_timer_cancel(frameTimer);
-  
-  // Choose a random behaviour unless one is specified
-  settings.state = rand() % NOOFBEHAVS;
-  switch(settings.state) {
-    case STANDING:
-      curBehav = bhStanding;
-    break;
-    case SLEEPING:
-      curBehav = bhSleeping;
-    break;
-    case WALKLEFT:
-      curBehav = bhWalkLeft;
-    break;
-    case WALKRIGHT:
-      curBehav = bhWalkRight;
-    break;
-    case WALKDOWN:
-      curBehav = bhWalkDown;
-    break;
-    case WALKUP:
-      curBehav = bhWalkUp;
-    break;
-    case SHREDDING:
-      curBehav = bhShredding;
-    break;
-    case EATING:
-      curBehav = bhEating;
-    break;
-  }
-  // Make sure we start the animation from the beginning
-  gbitmap_sequence_restart(curBehav);
-  
-  // Set timeout for next behaviour change
-  behavTimer = app_timer_register((rand() % 3000) + 3000, changeBehaviour, NULL);
-
-  // Start the animation again
-  nextFrame();
+static void loadWeatherIcons() {
+  wIcon01d = gbitmap_create_with_resource(RESOURCE_ID_01D);
+  wIcon01n = gbitmap_create_with_resource(RESOURCE_ID_01N);
+  wIcon02d = gbitmap_create_with_resource(RESOURCE_ID_02D);
+  wIcon02n = gbitmap_create_with_resource(RESOURCE_ID_02N);
+  wIcon03d = gbitmap_create_with_resource(RESOURCE_ID_03D);
+  wIcon03n = gbitmap_create_with_resource(RESOURCE_ID_03N);
+  wIcon04d = gbitmap_create_with_resource(RESOURCE_ID_04D);
+  wIcon04n = gbitmap_create_with_resource(RESOURCE_ID_04N);
+  wIcon09d = gbitmap_create_with_resource(RESOURCE_ID_09D);
+  wIcon09n = gbitmap_create_with_resource(RESOURCE_ID_09N);
+  wIcon10d = gbitmap_create_with_resource(RESOURCE_ID_10D);
+  wIcon10n = gbitmap_create_with_resource(RESOURCE_ID_10N);
+  wIcon11d = gbitmap_create_with_resource(RESOURCE_ID_11D);
+  wIcon11n = gbitmap_create_with_resource(RESOURCE_ID_11N);
+  wIcon13d = gbitmap_create_with_resource(RESOURCE_ID_13D);
+  wIcon13n = gbitmap_create_with_resource(RESOURCE_ID_13N);
+  wIcon50d = gbitmap_create_with_resource(RESOURCE_ID_50D);
+  wIcon50n = gbitmap_create_with_resource(RESOURCE_ID_50N);
 }
 
 static void update_time() {
@@ -232,7 +245,8 @@ static void update_time() {
   // Write the current hours and minutes into a buffer
   static char time_buffer[8];
   static char date_buffer[16];
-  strftime(time_buffer, sizeof(time_buffer), (clock_is_24h_style() ? "%H:%M" : "%I:%M"), tick_time);
+  //strftime(time_buffer, sizeof(time_buffer), (clock_is_24h_style() ? "%H:%M" : "%I:%M"), tick_time);
+  strftime(time_buffer, sizeof(time_buffer), "%H:%M", tick_time);
   strftime(date_buffer, sizeof(date_buffer), "%d %B", tick_time);
   // Display this time on the TextLayer
   text_layer_set_text(s_time_layer, time_buffer);
@@ -501,7 +515,7 @@ static void init() {
   battery_callback(battery_state_service_peek());
 
   // Initialize Boris ai to get it going
-  changeBehaviour();
+  changeBehaviour(666);
 }
 
 static void deinit() {
