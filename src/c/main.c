@@ -10,7 +10,6 @@ static BitmapLayer *borisLayer;
 static BitmapLayer *weatherIconLayer;
 static TextLayer *weatherTextLayer;
 static TextLayer *weatherTextShadowLayer;
-static char temperatureBuffer[4];
 static GFont weatherFont;
 static int batteryLevel;
 static Layer *batteryLayer;
@@ -39,6 +38,7 @@ static GBitmap *wIcon13n;
 static GBitmap *wIcon50d;
 static GBitmap *wIcon50n;
 
+static bool oneShot;
 static GBitmapSequence *bhStanding;
 static GBitmapSequence *bhSleeping;
 static GBitmapSequence *bhWalkLeft;
@@ -47,20 +47,22 @@ static GBitmapSequence *bhWalkDown;
 static GBitmapSequence *bhWalkUp;
 static GBitmapSequence *bhShredding;
 static GBitmapSequence *bhEating;
+static GBitmapSequence *bhInvaders;
 
-#define NOOFBEHAVS 8
+#define NOOFBEHAVS 9
 
-#define STANDING 0
-#define SLEEPING 1
-#define WALKLEFT 2
-#define WALKRIGHT 3
-#define WALKUP 4
-#define WALKDOWN 5
+#define WALKLEFT 0
+#define WALKRIGHT 1
+#define WALKUP 2
+#define WALKDOWN 3
+#define STANDING 4
+#define SLEEPING 5
 #define SHREDDING 6
 #define EATING 7
+#define INVADERS 8
 
 static void nextFrame();
-static void changeBehaviour(int newState);
+static void changeBehaviour(uint32_t newBehav, uint32_t duration);
 
 // Persistent storage key
 #define SETTINGS_KEY 1
@@ -72,6 +74,8 @@ typedef struct AppSettings {
   int borisX;
   int borisY;
   int borisSize;
+  char *borisBedtime;
+  char *borisGetUpTime;
 } AppSettings;
 
 static AppSettings settings;
@@ -79,9 +83,11 @@ static AppSettings settings;
 static void defaultSettings() {
   settings.bgColor = GColorBlack;
   settings.state = STANDING;
-  settings.borisX = 10;
-  settings.borisY = 72;
+  settings.borisX = 60;
+  settings.borisY = 90;
   settings.borisSize = 32;
+  settings.borisBedtime = "22:00";
+  settings.borisGetUpTime = "08:00";
 }
 
 // Read settings from persistent storage
@@ -106,24 +112,29 @@ static void loadBehavs() {
   bhWalkUp = gbitmap_sequence_create_with_resource(RESOURCE_ID_WALKUP);
   bhShredding = gbitmap_sequence_create_with_resource(RESOURCE_ID_SHREDDING);
   bhEating = gbitmap_sequence_create_with_resource(RESOURCE_ID_EATING);
+  bhInvaders = gbitmap_sequence_create_with_resource(RESOURCE_ID_INVADERS);
 }
 
 static void pickRandomBehav() {
-  changeBehaviour(666);
+  changeBehaviour(666, 666);
 }
 
-static void changeBehaviour(int newState) {
-  // Stop the current frame timer
+static void changeBehaviour(uint32_t newBehav, uint32_t duration) {
+  // Stop any currently running timers
   app_timer_cancel(frameTimer);
   app_timer_cancel(behavTimer);
   
   // Choose a random behaviour unless one is specified
-  if(newState != 666) {
-    settings.state = newState;
+  if(newBehav != 666) {
+    settings.state = newBehav;
   } else {
-    settings.state = rand() % NOOFBEHAVS;
+    if(rand() % 3 == 0) {
+      settings.state = rand() % 4;
+    } else {
+      settings.state = rand() % NOOFBEHAVS;
+    }
   }
-  //settings.state = WALKLEFT; // Uncomment to test / force behaviour
+  //settings.state = INVADERS; // Uncomment to test certain behaviour
   switch(settings.state) {
     case STANDING:
       curBehav = bhStanding;
@@ -149,18 +160,30 @@ static void changeBehaviour(int newState) {
     case EATING:
       curBehav = bhEating;
     break;
+    case INVADERS:
+      curBehav = bhInvaders;
+    break;
   }
   // Make sure we start the animation from the beginning
   gbitmap_sequence_restart(curBehav);
-  
-  // Set timeout for next behaviour change
-  behavTimer = app_timer_register((rand() % 3000) + 3000, pickRandomBehav, NULL);
+  if(gbitmap_sequence_get_total_num_frames(curBehav) >= 20) {
+    oneShot = true;
+  } else {
+    oneShot = false;
+    // Set timeout for next behaviour change
+    if(duration != 666) {
+      behavTimer = app_timer_register(duration, pickRandomBehav, NULL);
+    } else {
+      behavTimer = app_timer_register((rand() % 3000) + 3000, pickRandomBehav, NULL);
+    }
+  }
 
-  // Start the animation again
+  // Start the animation
   nextFrame();
 }
 
-static void nextFrame() {
+static void nextFrame()
+{
   uint32_t nextDelay;
 
   // Advance to the next APNG frame, and get the delay for this frame
@@ -190,28 +213,34 @@ static void nextFrame() {
   
   // Pebble Time resolution is 144 x 168
   // Make sure Boris doesn't get too far out of bounds
-  int min = settings.borisSize;
-  int maxX = 144;
-  int maxY = 168;
-  if(settings.borisX < -min || settings.borisX > maxX ||
-     settings.borisY < -min || settings.borisY > maxY) {
-    if(settings.borisX < -min) {
+  // Values are minutely adjusted for the empty space around the Boris sprites
+  int minX = - settings.borisSize + 5;
+  int minY = - settings.borisSize;
+  int maxX = 144 - 5;
+  int maxY = 168 - 3;
+  if(settings.borisX < minX || settings.borisX > maxX ||
+     settings.borisY < minY || settings.borisY > maxY) {
+    if(settings.borisX < minX) {
       settings.borisX = maxX;
     }
     if(settings.borisX > maxX) {
-      settings.borisX = -min;
+      settings.borisX = minX;
     }
-    if(settings.borisY < -min) {
+    if(settings.borisY < minY) {
       settings.borisY = maxY;
     }
     if(settings.borisY > maxY) {
-      settings.borisY = -min;
+      settings.borisY = minY;
     }
-    return;
   }
 
   // Timer for that frame's delay
-  frameTimer = app_timer_register(nextDelay, nextFrame, NULL);
+  if(oneShot == true && gbitmap_sequence_get_current_frame_idx(curBehav) >=
+     (int32_t)gbitmap_sequence_get_total_num_frames(curBehav)) {
+      frameTimer = app_timer_register(nextDelay, pickRandomBehav, NULL);
+  } else {
+    frameTimer = app_timer_register(nextDelay, nextFrame, NULL);
+  }
 }
 
 static void loadWeatherIcons() {
@@ -243,7 +272,6 @@ static void updateTime() {
   // Write the current hours and minutes into a buffer
   static char timeBuffer[8];
   static char dateBuffer[16];
-  //strftime(timeBuffer, sizeof(timeBuffer), (clock_is_24h_style() ? "%H:%M" : "%I:%M"), tickTime);
   strftime(timeBuffer, sizeof(timeBuffer), "%H:%M", tickTime);
   strftime(dateBuffer, sizeof(dateBuffer), "%d %B", tickTime);
   // Display this time on the TextLayer
@@ -251,6 +279,16 @@ static void updateTime() {
   text_layer_set_text(dateLayer, dateBuffer);
   text_layer_set_text(timeShadowLayer, timeBuffer);
   text_layer_set_text(dateShadowLayer, dateBuffer);
+
+  // Is it time for Boris to go to sleep?
+  if(!strcmp(timeBuffer, settings.borisBedtime)) {
+    changeBehaviour(SLEEPING, 43200000); // Send Boris to sleep for 12 hours
+  }
+  // Is it time for Boris to go get up?
+  if(!strcmp(timeBuffer, settings.borisGetUpTime)) {
+    changeBehaviour(666, 666); // Wake Boris up with a random behaviour
+  }
+
 }
 
 static void batteryUpdateProc(Layer *layer, GContext *ctx) {
@@ -291,8 +329,7 @@ static void mainWindowLoad(Window *window) {
   loadWeatherIcons();
   
   // Create blank GBitmap using APNG frame size
-  GSize frameSize = gbitmap_sequence_get_bitmap_size(bhStanding);
-  borisBitmap = gbitmap_create_blank(frameSize, GBitmapFormat8Bit);
+  borisBitmap = gbitmap_create_blank(GSize(settings.borisSize, settings.borisSize), GBitmapFormat8Bit);
 
   // Create BitmapLayer to display the GBitmap
   borisLayer = bitmap_layer_create(GRect(settings.borisX, settings.borisY, settings.borisSize, settings.borisSize));
@@ -403,10 +440,13 @@ static void inboxReceivedCallback(DictionaryIterator *iterator, void *context) {
   Tuple *tempTuple = dict_find(iterator, MESSAGE_KEY_TEMPERATURE);
   Tuple *iconTuple = dict_find(iterator, MESSAGE_KEY_ICON);
   Tuple *bgColorTuple = dict_find(iterator, MESSAGE_KEY_BackgroundColor);
+  Tuple *bedtimeTuple = dict_find(iterator, MESSAGE_KEY_Bedtime);
+  Tuple *getUpTimeTuple = dict_find(iterator, MESSAGE_KEY_GetUpTime);
 
   // If all data is available, use it
   if(tempTuple && iconTuple) {
-    char iconBuffer[4];
+    static char iconBuffer[4];
+    static char temperatureBuffer[4];
     snprintf(temperatureBuffer, sizeof(temperatureBuffer), "%dC", (int)tempTuple->value->int32);
     snprintf(iconBuffer, sizeof(iconBuffer), "%s", iconTuple->value->cstring);
     text_layer_set_text(weatherTextLayer, temperatureBuffer);
@@ -456,6 +496,10 @@ static void inboxReceivedCallback(DictionaryIterator *iterator, void *context) {
     window_set_background_color(mainWindow, settings.bgColor);
     saveSettings();
   }
+  if(bedtimeTuple && getUpTimeTuple) {
+    settings.borisBedtime = bedtimeTuple->value->cstring;
+    settings.borisGetUpTime = getUpTimeTuple->value->cstring;
+  }
 }
 
 static void inboxDroppedCallback(AppMessageResult reason, void *context) {
@@ -479,7 +523,6 @@ static void batteryCallback(BatteryChargeState state) {
 
 static void init() {
   loadSettings();
-  
   mainWindow = window_create();
   window_set_window_handlers(mainWindow, (WindowHandlers) {
     .load = mainWindowLoad,
@@ -510,8 +553,8 @@ static void init() {
   // Ensure battery level is displayed from the start
   batteryCallback(battery_state_service_peek());
 
-  // Initialize Boris with a behaviour
-  changeBehaviour(666);
+  // Initialize Boris with a random behaviour
+  changeBehaviour(666, 666);
 }
 
 static void deinit() {

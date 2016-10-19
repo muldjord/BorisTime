@@ -39,6 +39,41 @@ module.exports = [
     ]
   },
   {
+    "type": "text",
+    "defaultValue": "Enter your desired values below."
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Sleep schedule"
+      },
+      {
+        "type": "input",
+        "messageKey": "Bedtime",
+        "defaultValue": "",
+        "label": "Go to sleep at",
+        "attributes": {
+          "placeholder": "HH:MM",
+          "limit": 5,
+          "type": "text"
+        }
+      },
+      {
+        "type": "input",
+        "messageKey": "GetUpTime",
+        "defaultValue": "",
+        "label": "Get up at",
+        "attributes": {
+          "placeholder": "HH:MM",
+          "limit": 5,
+          "type": "text"
+        }
+      }
+    ]
+  },
+  {
     "type": "section",
     "items": [
       {
@@ -50,7 +85,7 @@ module.exports = [
         "messageKey": "BackgroundColor",
         "label": "Background color",
         "defaultValue": "0x000000"
-      },
+      }
     ]
   },
   {

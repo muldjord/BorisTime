@@ -17,11 +17,67 @@
             "ICON",
             "WeatherCity",
             "WeatherKey",
-            "BackgroundColor"
+            "BackgroundColor",
+            "Bedtime",
+            "GetUpTime"
         ],
         "projectType": "native",
         "resources": {
             "media": [
+                {
+                    "file": "data/walkup.png",
+                    "name": "WALKUP",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/walkright.png",
+                    "name": "WALKRIGHT",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/walkleft.png",
+                    "name": "WALKLEFT",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/walkdown.png",
+                    "name": "WALKDOWN",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/standing.png",
+                    "name": "STANDING",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/sleeping.png",
+                    "name": "SLEEPING",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/shredding.png",
+                    "name": "SHREDDING",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/eating.png",
+                    "name": "EATING",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/invaders.png",
+                    "name": "INVADERS",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
                 {
                     "file": "images/50n.png",
                     "name": "50N",
@@ -149,54 +205,6 @@
                     "name": "FONT_20",
                     "targetPlatforms": null,
                     "type": "font"
-                },
-                {
-                    "file": "data/eating.png",
-                    "name": "EATING",
-                    "targetPlatforms": null,
-                    "type": "raw"
-                },
-                {
-                    "file": "data/shredding.png",
-                    "name": "SHREDDING",
-                    "targetPlatforms": null,
-                    "type": "raw"
-                },
-                {
-                    "file": "data/walkup.png",
-                    "name": "WALKUP",
-                    "targetPlatforms": null,
-                    "type": "raw"
-                },
-                {
-                    "file": "data/walkright.png",
-                    "name": "WALKRIGHT",
-                    "targetPlatforms": null,
-                    "type": "raw"
-                },
-                {
-                    "file": "data/walkleft.png",
-                    "name": "WALKLEFT",
-                    "targetPlatforms": null,
-                    "type": "raw"
-                },
-                {
-                    "file": "data/walkdown.png",
-                    "name": "WALKDOWN",
-                    "targetPlatforms": null,
-                    "type": "raw"
-                },
-                {
-                    "file": "data/sleeping.png",
-                    "name": "SLEEPING",
-                    "targetPlatforms": null,
-                    "type": "raw"
-                },
-                {
-                    "file": "data/standing.png",
-                    "name": "STANDING",
-                    "targetPlatforms": null,
-                    "type": "raw"
                 }
             ]
         },
