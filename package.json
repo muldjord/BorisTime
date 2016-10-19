@@ -25,6 +25,12 @@
         "resources": {
             "media": [
                 {
+                    "file": "data/coffee.png",
+                    "name": "COFFEE",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
                     "file": "data/walkup.png",
                     "name": "WALKUP",
                     "targetPlatforms": null,

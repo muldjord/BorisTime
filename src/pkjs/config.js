@@ -39,10 +39,6 @@ module.exports = [
     ]
   },
   {
-    "type": "text",
-    "defaultValue": "Enter your desired values below."
-  },
-  {
     "type": "section",
     "items": [
       {

@@ -48,8 +48,9 @@ static GBitmapSequence *bhWalkUp;
 static GBitmapSequence *bhShredding;
 static GBitmapSequence *bhEating;
 static GBitmapSequence *bhInvaders;
+static GBitmapSequence *bhCoffee;
 
-#define NOOFBEHAVS 9
+#define NOOFBEHAVS 10
 
 #define WALKLEFT 0
 #define WALKRIGHT 1
@@ -60,6 +61,7 @@ static GBitmapSequence *bhInvaders;
 #define SHREDDING 6
 #define EATING 7
 #define INVADERS 8
+#define COFFEE 9
 
 static void nextFrame();
 static void changeBehaviour(uint32_t newBehav, uint32_t duration);
@@ -81,7 +83,7 @@ typedef struct AppSettings {
 static AppSettings settings;
 
 static void defaultSettings() {
-  settings.bgColor = GColorBlack;
+  settings.bgColor = GColorDarkGreen;
   settings.state = STANDING;
   settings.borisX = 60;
   settings.borisY = 90;
@@ -113,6 +115,7 @@ static void loadBehavs() {
   bhShredding = gbitmap_sequence_create_with_resource(RESOURCE_ID_SHREDDING);
   bhEating = gbitmap_sequence_create_with_resource(RESOURCE_ID_EATING);
   bhInvaders = gbitmap_sequence_create_with_resource(RESOURCE_ID_INVADERS);
+  bhCoffee = gbitmap_sequence_create_with_resource(RESOURCE_ID_COFFEE);
 }
 
 static void pickRandomBehav() {
@@ -134,7 +137,7 @@ static void changeBehaviour(uint32_t newBehav, uint32_t duration) {
       settings.state = rand() % NOOFBEHAVS;
     }
   }
-  //settings.state = INVADERS; // Uncomment to test certain behaviour
+  //settings.state = COFFEE; // Uncomment to test certain behaviour
   switch(settings.state) {
     case STANDING:
       curBehav = bhStanding;
@@ -163,6 +166,9 @@ static void changeBehaviour(uint32_t newBehav, uint32_t duration) {
     case INVADERS:
       curBehav = bhInvaders;
     break;
+    case COFFEE:
+      curBehav = bhCoffee;
+    break;
   }
   // Make sure we start the animation from the beginning
   gbitmap_sequence_restart(curBehav);
@@ -174,7 +180,7 @@ static void changeBehaviour(uint32_t newBehav, uint32_t duration) {
     if(duration != 666) {
       behavTimer = app_timer_register(duration, pickRandomBehav, NULL);
     } else {
-      behavTimer = app_timer_register((rand() % 3000) + 3000, pickRandomBehav, NULL);
+      behavTimer = app_timer_register((rand() % 3000) + 4000, pickRandomBehav, NULL);
     }
   }
 
