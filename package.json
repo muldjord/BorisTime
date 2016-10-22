@@ -25,6 +25,36 @@
         "resources": {
             "media": [
                 {
+                    "file": "data/getup.png",
+                    "name": "GETUP",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/gotosleep.png",
+                    "name": "GOTOSLEEP",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/readpaper.png",
+                    "name": "READPAPER",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/walkdown.png",
+                    "name": "WALKDOWN",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/shower.png",
+                    "name": "SHOWER",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
                     "file": "data/coffee.png",
                     "name": "COFFEE",
                     "targetPlatforms": null,
@@ -45,12 +75,6 @@
                 {
                     "file": "data/walkleft.png",
                     "name": "WALKLEFT",
-                    "targetPlatforms": null,
-                    "type": "raw"
-                },
-                {
-                    "file": "data/walkdown.png",
-                    "name": "WALKDOWN",
                     "targetPlatforms": null,
                     "type": "raw"
                 },

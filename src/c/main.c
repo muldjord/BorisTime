@@ -49,8 +49,15 @@ static GBitmapSequence *bhShredding;
 static GBitmapSequence *bhEating;
 static GBitmapSequence *bhInvaders;
 static GBitmapSequence *bhCoffee;
+static GBitmapSequence *bhShower;
+static GBitmapSequence *bhReadPaper;
+static GBitmapSequence *bhGoToSleep;
+static GBitmapSequence *bhGetUp;
 
-#define NOOFBEHAVS 10
+#define RANDOM 666
+#define INFINITE 667
+
+#define NOOFBEHAVS 13
 
 #define WALKLEFT 0
 #define WALKRIGHT 1
@@ -62,6 +69,29 @@ static GBitmapSequence *bhCoffee;
 #define EATING 7
 #define INVADERS 8
 #define COFFEE 9
+#define SHOWER 10
+#define READPAPER 11
+
+// Specials
+#define GOTOSLEEP 42
+#define GETUP 43
+
+void loadBehavs() {
+  bhStanding = gbitmap_sequence_create_with_resource(RESOURCE_ID_STANDING);
+  bhSleeping = gbitmap_sequence_create_with_resource(RESOURCE_ID_SLEEPING);
+  bhWalkLeft = gbitmap_sequence_create_with_resource(RESOURCE_ID_WALKLEFT);
+  bhWalkRight = gbitmap_sequence_create_with_resource(RESOURCE_ID_WALKRIGHT);
+  bhWalkDown = gbitmap_sequence_create_with_resource(RESOURCE_ID_WALKDOWN);
+  bhWalkUp = gbitmap_sequence_create_with_resource(RESOURCE_ID_WALKUP);
+  bhShredding = gbitmap_sequence_create_with_resource(RESOURCE_ID_SHREDDING);
+  bhEating = gbitmap_sequence_create_with_resource(RESOURCE_ID_EATING);
+  bhInvaders = gbitmap_sequence_create_with_resource(RESOURCE_ID_INVADERS);
+  bhCoffee = gbitmap_sequence_create_with_resource(RESOURCE_ID_COFFEE);
+  bhShower = gbitmap_sequence_create_with_resource(RESOURCE_ID_SHOWER);
+  bhReadPaper = gbitmap_sequence_create_with_resource(RESOURCE_ID_READPAPER);
+  bhGoToSleep = gbitmap_sequence_create_with_resource(RESOURCE_ID_GOTOSLEEP);
+  bhGetUp = gbitmap_sequence_create_with_resource(RESOURCE_ID_GETUP);
+}
 
 static void nextFrame();
 static void changeBehaviour(uint32_t newBehav, uint32_t duration);
@@ -105,21 +135,17 @@ static void saveSettings() {
   persist_write_data(SETTINGS_KEY, &settings, sizeof(settings));
 }
 
-static void loadBehavs() {
-  bhStanding = gbitmap_sequence_create_with_resource(RESOURCE_ID_STANDING);
-  bhSleeping = gbitmap_sequence_create_with_resource(RESOURCE_ID_SLEEPING);
-  bhWalkLeft = gbitmap_sequence_create_with_resource(RESOURCE_ID_WALKLEFT);
-  bhWalkRight = gbitmap_sequence_create_with_resource(RESOURCE_ID_WALKRIGHT);
-  bhWalkDown = gbitmap_sequence_create_with_resource(RESOURCE_ID_WALKDOWN);
-  bhWalkUp = gbitmap_sequence_create_with_resource(RESOURCE_ID_WALKUP);
-  bhShredding = gbitmap_sequence_create_with_resource(RESOURCE_ID_SHREDDING);
-  bhEating = gbitmap_sequence_create_with_resource(RESOURCE_ID_EATING);
-  bhInvaders = gbitmap_sequence_create_with_resource(RESOURCE_ID_INVADERS);
-  bhCoffee = gbitmap_sequence_create_with_resource(RESOURCE_ID_COFFEE);
-}
-
-static void pickRandomBehav() {
-  changeBehaviour(666, 666);
+static void pickNextBehav() {
+  switch(settings.state) {
+    case GOTOSLEEP:
+      changeBehaviour(SLEEPING, INFINITE);
+    break;
+    case GETUP:
+      changeBehaviour(SHOWER, RANDOM);
+    break;
+    default:
+      changeBehaviour(RANDOM, RANDOM);
+  }
 }
 
 static void changeBehaviour(uint32_t newBehav, uint32_t duration) {
@@ -128,7 +154,7 @@ static void changeBehaviour(uint32_t newBehav, uint32_t duration) {
   app_timer_cancel(behavTimer);
   
   // Choose a random behaviour unless one is specified
-  if(newBehav != 666) {
+  if(newBehav != RANDOM) {
     settings.state = newBehav;
   } else {
     if(rand() % 3 == 0) {
@@ -137,7 +163,9 @@ static void changeBehaviour(uint32_t newBehav, uint32_t duration) {
       settings.state = rand() % NOOFBEHAVS;
     }
   }
-  //settings.state = COFFEE; // Uncomment to test certain behaviour
+  //settings.borisX = 70;
+  //settings.borisY= 90;
+  //settings.state = READPAPER; // Uncomment to test certain behaviour
   switch(settings.state) {
     case STANDING:
       curBehav = bhStanding;
@@ -169,18 +197,32 @@ static void changeBehaviour(uint32_t newBehav, uint32_t duration) {
     case COFFEE:
       curBehav = bhCoffee;
     break;
+    case SHOWER:
+      curBehav = bhShower;
+    break;
+    case READPAPER:
+      curBehav = bhReadPaper;
+    break;
+    case GOTOSLEEP:
+      curBehav = bhGoToSleep;
+    break;
+    case GETUP:
+      curBehav = bhGetUp;
+    break;
   }
   // Make sure we start the animation from the beginning
   gbitmap_sequence_restart(curBehav);
-  if(gbitmap_sequence_get_total_num_frames(curBehav) >= 20) {
+  if(gbitmap_sequence_get_total_num_frames(curBehav) >= 20 || settings.state >= 42) {
     oneShot = true;
   } else {
     oneShot = false;
     // Set timeout for next behaviour change
-    if(duration != 666) {
-      behavTimer = app_timer_register(duration, pickRandomBehav, NULL);
+    if(duration != RANDOM) {
+      if(duration != INFINITE) {
+        behavTimer = app_timer_register(duration, pickNextBehav, NULL);
+      }
     } else {
-      behavTimer = app_timer_register((rand() % 3000) + 4000, pickRandomBehav, NULL);
+      behavTimer = app_timer_register((rand() % 4000) + 4000, pickNextBehav, NULL);
     }
   }
 
@@ -243,7 +285,7 @@ static void nextFrame()
   // Timer for that frame's delay
   if(oneShot == true && gbitmap_sequence_get_current_frame_idx(curBehav) >=
      (int32_t)gbitmap_sequence_get_total_num_frames(curBehav)) {
-      frameTimer = app_timer_register(nextDelay, pickRandomBehav, NULL);
+      frameTimer = app_timer_register(nextDelay, pickNextBehav, NULL);
   } else {
     frameTimer = app_timer_register(nextDelay, nextFrame, NULL);
   }
@@ -288,11 +330,11 @@ static void updateTime() {
 
   // Is it time for Boris to go to sleep?
   if(!strcmp(timeBuffer, settings.borisBedtime)) {
-    changeBehaviour(SLEEPING, 43200000); // Send Boris to sleep for 12 hours
+    changeBehaviour(GOTOSLEEP, RANDOM); // Send Boris to sleep for 12 hours
   }
   // Is it time for Boris to go get up?
   if(!strcmp(timeBuffer, settings.borisGetUpTime)) {
-    changeBehaviour(666, 666); // Wake Boris up with a random behaviour
+    changeBehaviour(GETUP, RANDOM); // Wake Boris up
   }
 
 }
@@ -560,7 +602,7 @@ static void init() {
   batteryCallback(battery_state_service_peek());
 
   // Initialize Boris with a random behaviour
-  changeBehaviour(666, 666);
+  changeBehaviour(RANDOM, RANDOM);
 }
 
 static void deinit() {
