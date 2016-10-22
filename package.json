@@ -25,6 +25,42 @@
         "resources": {
             "media": [
                 {
+                    "file": "data/giftwrap.png",
+                    "name": "GIFTWRAP",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/balloon.png",
+                    "name": "BALLOON",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/weewee.png",
+                    "name": "WEEWEE",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/sunglasses.png",
+                    "name": "SUNGLASSES",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/scare.png",
+                    "name": "SCARE",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/tongueout.png",
+                    "name": "TONGUEOUT",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
                     "file": "data/getup.png",
                     "name": "GETUP",
                     "targetPlatforms": null,

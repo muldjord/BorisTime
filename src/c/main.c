@@ -53,11 +53,17 @@ static GBitmapSequence *bhShower;
 static GBitmapSequence *bhReadPaper;
 static GBitmapSequence *bhGoToSleep;
 static GBitmapSequence *bhGetUp;
+static GBitmapSequence *bhScare;
+static GBitmapSequence *bhSunglasses;
+static GBitmapSequence *bhTongueOut;
+static GBitmapSequence *bhWeeWee;
+static GBitmapSequence *bhBalloon;
+static GBitmapSequence *bhGiftWrap;
 
 #define RANDOM 666
 #define INFINITE 667
 
-#define NOOFBEHAVS 13
+#define NOOFBEHAVS 18
 
 #define WALKLEFT 0
 #define WALKRIGHT 1
@@ -71,6 +77,12 @@ static GBitmapSequence *bhGetUp;
 #define COFFEE 9
 #define SHOWER 10
 #define READPAPER 11
+#define SCARE 12
+#define SUNGLASSES 13
+#define TONGUEOUT 14
+#define WEEWEE 15
+#define BALLOON 16
+#define GIFTWRAP 17
 
 // Specials
 #define GOTOSLEEP 42
@@ -91,6 +103,12 @@ void loadBehavs() {
   bhReadPaper = gbitmap_sequence_create_with_resource(RESOURCE_ID_READPAPER);
   bhGoToSleep = gbitmap_sequence_create_with_resource(RESOURCE_ID_GOTOSLEEP);
   bhGetUp = gbitmap_sequence_create_with_resource(RESOURCE_ID_GETUP);
+  bhScare = gbitmap_sequence_create_with_resource(RESOURCE_ID_SCARE);
+  bhSunglasses = gbitmap_sequence_create_with_resource(RESOURCE_ID_SUNGLASSES);
+  bhTongueOut = gbitmap_sequence_create_with_resource(RESOURCE_ID_TONGUEOUT);
+  bhWeeWee = gbitmap_sequence_create_with_resource(RESOURCE_ID_WEEWEE);
+  bhBalloon = gbitmap_sequence_create_with_resource(RESOURCE_ID_BALLOON);
+  bhGiftWrap = gbitmap_sequence_create_with_resource(RESOURCE_ID_GIFTWRAP);
 }
 
 static void nextFrame();
@@ -143,6 +161,9 @@ static void pickNextBehav() {
     case GETUP:
       changeBehaviour(SHOWER, RANDOM);
     break;
+    case WEEWEE:
+      changeBehaviour(SHOWER, RANDOM);
+    break;
     default:
       changeBehaviour(RANDOM, RANDOM);
   }
@@ -165,7 +186,7 @@ static void changeBehaviour(uint32_t newBehav, uint32_t duration) {
   }
   //settings.borisX = 70;
   //settings.borisY= 90;
-  //settings.state = READPAPER; // Uncomment to test certain behaviour
+  //settings.state = GIFTWRAP; // Uncomment to test certain behaviour
   switch(settings.state) {
     case STANDING:
       curBehav = bhStanding;
@@ -208,6 +229,24 @@ static void changeBehaviour(uint32_t newBehav, uint32_t duration) {
     break;
     case GETUP:
       curBehav = bhGetUp;
+    break;
+    case SCARE:
+      curBehav = bhScare;
+    break;
+    case SUNGLASSES:
+      curBehav = bhSunglasses;
+    break;
+    case TONGUEOUT:
+      curBehav = bhTongueOut;
+    break;
+    case WEEWEE:
+      curBehav = bhWeeWee;
+    break;
+    case BALLOON:
+      curBehav = bhBalloon;
+    break;
+    case GIFTWRAP:
+      curBehav = bhGiftWrap;
     break;
   }
   // Make sure we start the animation from the beginning
