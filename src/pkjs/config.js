@@ -81,6 +81,12 @@ module.exports = [
         "messageKey": "BackgroundColor",
         "label": "Background color",
         "defaultValue": "0x000000"
+      },
+      {
+        "type": "toggle",
+        "messageKey": "BatterySaver",
+        "label": "Enable battery saver",
+        "defaultValue": false
       }
     ]
   },

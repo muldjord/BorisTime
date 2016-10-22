@@ -19,7 +19,8 @@
             "WeatherKey",
             "BackgroundColor",
             "Bedtime",
-            "GetUpTime"
+            "GetUpTime",
+            "BatterySaver"
         ],
         "projectType": "native",
         "resources": {

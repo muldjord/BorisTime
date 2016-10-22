@@ -126,6 +126,7 @@ typedef struct AppSettings {
   int borisSize;
   char *borisBedtime;
   char *borisGetUpTime;
+  bool batterySaver;
 } AppSettings;
 
 static AppSettings settings;
@@ -138,6 +139,7 @@ static void defaultSettings() {
   settings.borisSize = 32;
   settings.borisBedtime = "22:00";
   settings.borisGetUpTime = "08:00";
+  settings.batterySaver = false;
 }
 
 // Read settings from persistent storage
@@ -321,6 +323,11 @@ static void nextFrame()
     }
   }
 
+  // If battery saver is on, double delay to update screen less often
+  if(settings.batterySaver == true) {
+    nextDelay *= 2;
+  }
+  
   // Timer for that frame's delay
   if(oneShot == true && gbitmap_sequence_get_current_frame_idx(curBehav) >=
      (int32_t)gbitmap_sequence_get_total_num_frames(curBehav)) {
@@ -529,6 +536,7 @@ static void inboxReceivedCallback(DictionaryIterator *iterator, void *context) {
   Tuple *bgColorTuple = dict_find(iterator, MESSAGE_KEY_BackgroundColor);
   Tuple *bedtimeTuple = dict_find(iterator, MESSAGE_KEY_Bedtime);
   Tuple *getUpTimeTuple = dict_find(iterator, MESSAGE_KEY_GetUpTime);
+  Tuple *batterySaverTuple = dict_find(iterator, MESSAGE_KEY_BatterySaver);
 
   // If all data is available, use it
   if(tempTuple && iconTuple) {
@@ -586,6 +594,9 @@ static void inboxReceivedCallback(DictionaryIterator *iterator, void *context) {
   if(bedtimeTuple && getUpTimeTuple) {
     settings.borisBedtime = bedtimeTuple->value->cstring;
     settings.borisGetUpTime = getUpTimeTuple->value->cstring;
+  }
+  if(batterySaverTuple) {
+    settings.batterySaver = batterySaverTuple->value->int8;
   }
 }
 
