@@ -172,14 +172,15 @@ static void pickNextBehav() {
 }
 
 static void changeBehaviour(uint32_t newBehav, uint32_t duration) {
-  // Stop any currently running timers
-  app_timer_cancel(frameTimer);
+  // Cancel any timers
   app_timer_cancel(behavTimer);
+  app_timer_cancel(frameTimer);
   
   // Choose a random behaviour unless one is specified
   if(newBehav != RANDOM) {
     settings.state = newBehav;
   } else {
+    // Choose a walking behaviour more often than others
     if(rand() % 3 == 0) {
       settings.state = rand() % 4;
     } else {
@@ -263,7 +264,11 @@ static void changeBehaviour(uint32_t newBehav, uint32_t duration) {
         behavTimer = app_timer_register(duration, pickNextBehav, NULL);
       }
     } else {
-      behavTimer = app_timer_register((rand() % 4000) + 4000, pickNextBehav, NULL);
+      if(settings.batterySaver) {
+        behavTimer = app_timer_register(((rand() % 4000) + 4000) * 2, pickNextBehav, NULL);
+      } else {
+        behavTimer = app_timer_register((rand() % 4000) + 4000, pickNextBehav, NULL);
+      }
     }
   }
 
